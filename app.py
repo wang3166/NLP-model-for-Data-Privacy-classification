@@ -1,9 +1,12 @@
 from flask import Flask,render_template,url_for,request
 import pandas as pd 
 import pickle
-from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
-#from sklearn.externals import joblib
+import numpy as np
+from custom_preprocessing import CustomPreProcessing
+from custom_preprocessing import PreProcessing
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
 
 
 app = Flask(__name__)
@@ -14,36 +17,56 @@ def home():
 
 @app.route('/predict',methods=['POST'])
 def predict():
-	df= pd.read_csv("Data/spam.csv", encoding="latin-1")
-	df.drop(['Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4'], axis=1, inplace=True)
-	# Features and Labels
-	df['label'] = df['v1'].map({'ham': 0, 'spam': 1})
-	df['message']=df['v2']
-	df.drop(['v1','v2'],axis=1,inplace=True)
-	X = df['message']
-	y = df['label']
-	
-	# Extract Feature With CountVectorizer
-	cv = CountVectorizer()
-	X = cv.fit_transform(X) # Fit the Data
-	from sklearn.model_selection import train_test_split
-	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-	#Naive Bayes Classifier
+	TEXT = "Data Policy"
+	LABEL = "label"
+
+	def cleantext(TEXT):
+	    stop_word = np.loadtxt("stopwords_en.txt", dtype=str)
+	    TEXT = TEXT.apply(lambda x : preproc.remove_stop_words(x, stop_word))
+	    TEXT = TEXT.apply(preprocess.remove_upper_case)
+	    TEXT = TEXT.apply(preproc.remove_URL)
+	    TEXT = TEXT.apply(preproc.remove_html)
+	    TEXT = TEXT.apply(preproc.remove_emoji)
+	    TEXT = TEXT.apply(lambda x: x.replace("'ve", " have"))
+	    TEXT = TEXT.apply(lambda x: x.replace("n't", " not"))
+	    return TEXT
+
+	# ---- Create object to preprocess the text 
+	preprocess = CustomPreProcessing()
+	preproc = PreProcessing()
+	df = pd.read_csv('../data/Data Policy small dataset.csv',encoding = "ISO-8859-1")
+
+
+	df[TEXT] = cleantext(df[TEXT])
+	tfidf_vect = TfidfVectorizer(analyzer='word', token_pattern=r'\w{1,}', max_features=5000)
+	tfidf_vect.fit(df[TEXT])
+	xtrain_tfidf =  tfidf_vect.transform(df[TEXT])
+
 	from sklearn.naive_bayes import MultinomialNB
-
 	clf = MultinomialNB()
-	clf.fit(X_train,y_train)
-	clf.score(X_test,y_test)
-	#Alternative Usage of Saved Model
-	# joblib.dump(clf, 'NB_spam_model.pkl')
-	# NB_spam_model = open('NB_spam_model.pkl','rb')
-	# clf = joblib.load(NB_spam_model)
-
+	clf.fit(xtrain_tfidf,df[LABEL])
+	
 	if request.method == 'POST':
-		message = request.form['message']
+		url = request.form['message']
+		import requests 
+		from bs4 import BeautifulSoup 
+
+		# getting response object 
+		res = requests.get(url) 
+		# Initialize the object with the document 
+		soup = BeautifulSoup(res.content, "html.parser") 
+		# Get the whole body tag 
+		tag = soup.body 
+		output = "" 
+		# Print each string recursivey 
+		for string in tag.strings: 
+		    output += string
 		data = [message]
-		vect = cv.transform(data).toarray()
-		my_prediction = clf.predict(vect)
+		d = {'Data Policy': [output]}
+		df_test = pd.DataFrame(data=d)
+		df_test['Data Policy'] = cleantext(df_test['Data Policy'])
+		xtest_tfidf =  tfidf_vect.transform(df_test[TEXT])
+		my_prediction = clf.predict(xtest_tfidf)
 	return render_template('result.html',prediction = my_prediction)
 
 
