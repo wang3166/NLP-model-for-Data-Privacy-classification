@@ -34,7 +34,7 @@ def predict():
 	# ---- Create object to preprocess the text 
 	preprocess = CustomPreProcessing()
 	preproc = PreProcessing()
-	df = pd.read_csv('../data/Data Policy small dataset.csv',encoding = "ISO-8859-1")
+	df = pd.read_csv('Data/Data Policy small dataset.csv',encoding = "ISO-8859-1")
 
 
 	df[TEXT] = cleantext(df[TEXT])
