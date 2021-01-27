@@ -7,6 +7,8 @@ from custom_preprocessing import CustomPreProcessing
 from custom_preprocessing import PreProcessing
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
+import requests 
+from bs4 import BeautifulSoup 
 
 
 app = Flask(__name__)
@@ -48,8 +50,6 @@ def predict():
 	
 	if request.method == 'POST':
 		url = request.form['message']
-		import requests 
-		from bs4 import BeautifulSoup 
 
 		# getting response object 
 		res = requests.get(url) 
