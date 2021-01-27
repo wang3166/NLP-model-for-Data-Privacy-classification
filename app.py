@@ -61,7 +61,7 @@ def predict():
 		# Print each string recursivey 
 		for string in tag.strings: 
 		    output += string
-		data = [message]
+		
 		d = {'Data Policy': [output]}
 		df_test = pd.DataFrame(data=d)
 		df_test['Data Policy'] = cleantext(df_test['Data Policy'])
