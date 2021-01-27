@@ -16,7 +16,7 @@ import re
 import itertools
 from tqdm import tqdm
 from sklearn.feature_extraction.text import CountVectorizer
-from keras.preprocessing.text import text_to_word_sequence
+#from keras.preprocessing.text import text_to_word_sequence
 #from googletrans import Translator
 
 class CustomPreProcessing(object):
